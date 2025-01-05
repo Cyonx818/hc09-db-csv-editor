@@ -10,40 +10,86 @@ MAXCOACHSTAT = 5
 MAXGMSTAT = MAXCOACHSTAT
 MINPLRN = 75
 TEAM_NAMES = {
-        "1": "Bears (Chicago)",
-        "2": "Bengals (Cincinnati)",
-        "3": "Bills (Buffalo)",
-        "4": "Broncos (Denver)",
-        "5": "Browns (Cleveland)",
-        "6": "Buccaneers (Tampa Bay)",
-        "7": "Cardinals (Arizona)",
-        "8": "Chargers (Los Angeles)",
-        "9": "Chiefs (Kansas City)",
-        "10": "Colts (Indianapolis)",
-        "11": "Cowboys (Dallas)",
-        "12": "Dolphins (Miami)",
-        "13": "Eagles (Philadelphia)",
-        "14": "Falcons (Atlanta)",
-        "15": "49ers (San Francisco)",
-        "16": "Giants (New York)",
-        "17": "Jaguars (Jacksonville)",
-        "18": "Jets (New York)",
-        "19": "Lions (Detroit)",
-        "20": "Packers (Green Bay)",
-        "21": "Panthers (Carolina)",
-        "22": "Patriots (New England)",
-        "23": "Raiders (Las Vegas)",
-        "24": "Rams (Los Angeles)",
-        "25": "Ravens (Baltimore)",
-        "26": "Redskins (Washington)",
-        "27": "Saints (New Orleans)",
-        "28": "Seahawks (Seattle)",
-        "29": "Steelers (Pittsburgh)",
-        "30": "Texans (Houston)",
-        "31": "Titans (Tennessee)",
-        "32": "Vikings (Minnesota)",
-        "33": "Free Agents",
-    }
+    "1": "Bears (Chicago)",
+    "2": "Bengals (Cincinnati)",
+    "3": "Bills (Buffalo)",
+    "4": "Broncos (Denver)",
+    "5": "Browns (Cleveland)",
+    "6": "Buccaneers (Tampa Bay)",
+    "7": "Cardinals (Arizona)",
+    "8": "Chargers (Los Angeles)",
+    "9": "Chiefs (Kansas City)",
+    "10": "Colts (Indianapolis)",
+    "11": "Cowboys (Dallas)",
+    "12": "Dolphins (Miami)",
+    "13": "Eagles (Philadelphia)",
+    "14": "Falcons (Atlanta)",
+    "15": "49ers (San Francisco)",
+    "16": "Giants (New York)",
+    "17": "Jaguars (Jacksonville)",
+    "18": "Jets (New York)",
+    "19": "Lions (Detroit)",
+    "20": "Packers (Green Bay)",
+    "21": "Panthers (Carolina)",
+    "22": "Patriots (New England)",
+    "23": "Raiders (Las Vegas)",
+    "24": "Rams (Los Angeles)",
+    "25": "Ravens (Baltimore)",
+    "26": "Redskins (Washington)",
+    "27": "Saints (New Orleans)",
+    "28": "Seahawks (Seattle)",
+    "29": "Steelers (Pittsburgh)",
+    "30": "Texans (Houston)",
+    "31": "Titans (Tennessee)",
+    "32": "Vikings (Minnesota)",
+    "33": "Free Agents",
+}
+PLAYER_STATS = {
+    'PSPD': 'PSDX',
+    'PAGI': 'PAGX',
+    'PACC': 'PACX',
+    'PSTR': 'PSTX',
+    'PAWR': 'PAWX',
+    'PSTA': 'PSAX',
+    'PINJ': 'PINX',
+    'PLTR': 'PLTX',
+    'PELU': 'PELX',
+    'PBCV': 'PBCX',
+    'PLSA': 'PLSX',
+    'PLSM': 'PSMx',
+    'PLJM': 'PLJX',
+    'PCAR': 'PCAX',
+    'PTHP': 'PTPX',
+    'PTHA': 'PTAX',
+    'PCTH': 'PCTX',
+    'PLSC': 'PSCX',
+    'PLCI': 'PLCX',
+    'PLRR': 'PRRX',
+    'PLRL': 'PRLX',
+    'PJMP': 'PJMX',
+    'PPBK': 'PPBX',
+    'PRBK': 'PRBX',
+    'PLIB': 'PIBX',
+    'PRBS': 'PRSX',
+    'PRBF': 'PRFX',
+    'PPBS': 'PPSX',
+    'PPBF': 'PPFX',
+    'PTAK': 'PTKX',
+    'PLHT': 'PLHX',
+    'PLPm': 'PPMX',
+    'PFMS': 'PFMX',
+    'PBSG': 'PBSX',
+    'PLPU': 'PPUX',
+    'PLPR': 'PPRX',
+    'PLMC': 'PLMX',
+    'PLZC': 'PLZX',
+    'PLPE': 'PPEX',
+    'PKPR': 'PKPX',
+    'PKAC': 'PKAX',
+    'PKRT': 'PKRX',
+    'PLRN': 'PLRX',
+    'PTGH': 'PTGX'
+}
 
 
 # Global Variables
@@ -305,7 +351,7 @@ def modify_roster_member(roster_type, member):
     # GMs and Trainers do not use this step
 
 
-def practice_really_hard(member):
+def read_the_manual(member):
     member.set_stat('SKPT', MAXSKILLPOINTS)
 
 
@@ -326,6 +372,20 @@ def print_team_names():
 
 
 # Player specific functions
+
+def inflate_current_stats(member):
+    #this will increase the player's stats by half the difference between their current value and the player's potential maximum
+    inflated_value = 0
+    inflation_amount = 0
+    for stat, max in PLAYER_STATS.items():
+        if member.data[stat] < member.data[max]:
+            inflation_amount = (int(member.data[max]) - int(member.data[stat])) // 2
+        else:
+            inflation_amount = 0
+        inflated_value = int(member.data[stat]) + inflation_amount
+        member.set_stat(stat, inflated_value)
+
+
 def list_players_by_team(players):
     position_abbr = {
         "0": "QB",
@@ -407,14 +467,14 @@ def max_potential(player):
 
 
 def make_physical_specimen(player):
+    #set age to 21
     player.set_stat('PAGE', 21)
 
+    #increase height and weight by 10% each
     current_height = player.data.get('PHGT', 0)
     current_weight = player.data.get('PWGT', 0)
-
     new_height = int(float(current_height) * 1.1)
     new_weight = int(float(current_weight) * 1.1)
-
     player.set_stat('PHGT', new_height)
     player.set_stat('PWGT', new_weight)
 
@@ -423,10 +483,11 @@ def modify_player(player):
     actions = {
         "1": ("Maximize Potential", max_potential),
         "2": ("Maximize Health", max_health),
-        "3": ("Resign for Peanuts", resign_for_peanuts),
-        "4": ("Make Physical Specimen", make_physical_specimen),
-        "5": ("Rename Player", rename_player),
-        "6": ("Change Key Value", change_key_value),
+        "3": ("Resign for Peanuts (7yr contract at league minimum salary)", resign_for_peanuts),
+        "4": ("Make Physical Specimen (increase physical size & max potentials)", make_physical_specimen),
+        "5": ("Take 'roids (inflate current stats)", inflate_current_stats),
+        "6": ("Rename Player", rename_player),
+        "7": ("Change Key Value", change_key_value),
     }
 
     modify_member(actions, player, "Player")
@@ -539,7 +600,7 @@ def modify_coach(coach):
     actions = {
         "1": ("Max General Coaching Potential", max_general_coaching_potential),
         "2": ("Max Positional Coaching Potential", max_positional_coaching_potential),
-        "3": ("Practice Really Hard (Max Skill Points)", practice_really_hard),
+        "3": ("Read the Manual (Max Skill Points)", read_the_manual),
         "4": ("Take old boy out for drinks (Captain personality)", captain_personality),
         "5": ("Rename Coach", rename_coach),
         "6": ("Change Key Value", change_key_value),
@@ -579,7 +640,7 @@ def modify_gm(gm):
     actions = {
         "1": ("Max General GM Potential", max_general_gm_potential),
         "2": ("Max Positional GM Potential", max_positional_gm_potential),
-        "3": ("Practice Really Hard (Max Skill Points)", practice_really_hard),
+        "3": ("Read the Manual (Max Skill Points)", read_the_manual),
         "4": ("Take old boy out for drinks (Captain personality)", captain_personality),
         # "5": ("Rename GM", rename_gm),
         "5": ("Change Key Value", change_key_value),
@@ -600,7 +661,7 @@ def max_trainer_potential(trainer):
 def modify_trainer(trainer):
     actions = actions = {
         "1": ("Max Trainer Potential", max_trainer_potential),
-        "2": ("Practice Really Hard (Max Skill Points)", practice_really_hard),
+        "2": ("Read the Manual (Max Skill Points)", read_the_manual),
         "3": ("Take old boy out for drinks (Captain personality)", captain_personality),
         # "5": ("Rename Trainer", rename_trainer),
         "4": ("Change Key Value", change_key_value),
