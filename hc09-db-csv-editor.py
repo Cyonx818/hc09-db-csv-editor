@@ -378,11 +378,13 @@ def inflate_current_stats(member):
     inflated_value = 0
     inflation_amount = 0
     for stat, max in PLAYER_STATS.items():
-        if member.data[stat] < member.data[max]:
-            inflation_amount = (int(member.data[max]) - int(member.data[stat])) // 2
+        player_stat = int(member.data[stat])
+        player_stat_max = int(member.data[max])
+        if player_stat < player_stat_max:
+            inflation_amount = (player_stat_max - player_stat) // 2
         else:
             inflation_amount = 0
-        inflated_value = int(member.data[stat]) + inflation_amount
+        inflated_value = player_stat + inflation_amount
         member.set_stat(stat, inflated_value)
 
 
