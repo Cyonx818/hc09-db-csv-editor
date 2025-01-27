@@ -1,6 +1,8 @@
 import csv
 import os
 import argparse
+import random
+
 
 # Constants
 MAXPLAYERSTAT = 99
@@ -138,6 +140,8 @@ def main_menu(roster_type, members, headers, input_csv_path):
             print("\nMain Menu:")
             print(f"1. List all {roster_type}s on a team")
             print(f"2. Select a {roster_type} by name")
+            if roster_type == 'Player':
+                print(f"3. Randomize {roster_type}s names (warning, this will affect all players)")
             print("q. Quit")
 
             choice = input("Enter your choice: ").strip().lower()
@@ -159,6 +163,9 @@ def main_menu(roster_type, members, headers, input_csv_path):
                         break
                     else:
                         print(f"{roster_type} not found. Please try again.")
+            elif choice == '3':
+                randomize_player_names(members)
+                changes = True
             elif choice in ['q', 'quit']:
                 break
             else:
@@ -495,6 +502,30 @@ def modify_player(player):
     modify_member(actions, player, "Player")
 
 
+def randomize_player_names(players):
+    # Collect all distinct first and last names
+    first_name_set = set()
+    last_name_set = set()
+    
+    for player in players:
+        if 'PFNA' in player.data:
+            first_name_set.add(player.data['PFNA'])
+        if 'PLNA' in player.data:
+            last_name_set.add(player.data['PLNA'])
+    
+    # Convert sets to lists so we can randomly choose from them
+    first_names = list(first_name_set)
+    last_names = list(last_name_set)
+    
+    # Randomize each player's name
+    for player in players:
+        # Select random first and last names
+        new_first_name = random.choice(first_names)
+        player.set_stat('PFNA', new_first_name)
+        new_last_name = random.choice(last_names)
+        player.set_stat('PLNA', new_last_name)
+
+
 def rename_player(player):
     first_name = input("Enter new first name (case-sensitive): ").strip()
     last_name = input("Enter new last name (case-sensitive): ").strip()
@@ -644,7 +675,6 @@ def modify_gm(gm):
         "2": ("Max Positional GM Potential", max_positional_gm_potential),
         "3": ("Read the Manual (Max Skill Points)", read_the_manual),
         "4": ("Take old boy out for drinks (Captain personality)", captain_personality),
-        # "5": ("Rename GM", rename_gm),
         "5": ("Change Key Value", change_key_value),
     }
     modify_member(actions, gm, 'GM')
@@ -665,7 +695,6 @@ def modify_trainer(trainer):
         "1": ("Max Trainer Potential", max_trainer_potential),
         "2": ("Read the Manual (Max Skill Points)", read_the_manual),
         "3": ("Take old boy out for drinks (Captain personality)", captain_personality),
-        # "5": ("Rename Trainer", rename_trainer),
         "4": ("Change Key Value", change_key_value),
     }
     modify_member(actions, trainer, 'Trainer')
