@@ -132,6 +132,7 @@ def main_menu(roster_type, members, headers, input_csv_path):
     member_index = None
     skill_file = None
     global skill_members
+    global changes
     if (roster_type == "Coach") or (roster_type == "GM"):
         skill_file = find_skill_file(input_csv_path, roster_type)
         skill_headers, skill_members = read_members_from_csv(skill_file)
@@ -140,8 +141,8 @@ def main_menu(roster_type, members, headers, input_csv_path):
             print("\nMain Menu:")
             print(f"1. List all {roster_type}s on a team")
             print(f"2. Select a {roster_type} by name")
-            if roster_type == 'Player':
-                print(f"3. Randomize {roster_type}s names (warning, this will affect all players)")
+            print(f"3. Modify all {roster_type}s on a team")
+            print(f"4. Randomize {roster_type}s names (warning, this will affect all {roster_type}s!)")
             print("q. Quit")
 
             choice = input("Enter your choice: ").strip().lower()
@@ -150,10 +151,10 @@ def main_menu(roster_type, members, headers, input_csv_path):
                 list_roster_by_team(roster_type, members)
             elif choice == '2':
                 while True:
-                    first_name = input("Enter member's first name (or 'q' to quit): ").strip()
+                    first_name = input(f"Enter {roster_type}'s first name (or 'q' to quit): ").strip()
                     if first_name.lower() in ['q', 'quit']:
                         break
-                    last_name = input("Enter member's last name (or 'q' to quit): ").strip()
+                    last_name = input(f"Enter {roster_type}'s last name (or 'q' to quit): ").strip()
                     if last_name.lower() in ['q', 'quit']:
                         break
                     member_index = find_member_index(members, first_name, last_name, roster_type)
@@ -164,8 +165,12 @@ def main_menu(roster_type, members, headers, input_csv_path):
                     else:
                         print(f"{roster_type} not found. Please try again.")
             elif choice == '3':
-                randomize_player_names(members)
-                changes = True
+                pass
+            elif choice == '4':
+                if roster_type == 'Player':
+                    randomize_player_names(members)
+                elif roster_type == 'Coach':
+                    randomize_coach_names(members)
             elif choice in ['q', 'quit']:
                 break
             else:
@@ -503,6 +508,8 @@ def modify_player(player):
 
 
 def randomize_player_names(players):
+    global changes
+    changes = True
     # Collect all distinct first and last names
     first_name_set = set()
     last_name_set = set()
@@ -641,6 +648,31 @@ def modify_coach(coach):
 
     modify_member(actions, coach, "Coach")
 
+
+def randomize_coach_names(coaches):
+    global changes
+    changes = True
+    # Collect all distinct first and last names
+    first_name_set = set()
+    last_name_set = set()
+    
+    for coach in coaches:
+        if 'CFNM' in coach.data:
+            first_name_set.add(coach.data['CFNM'])
+        if 'CLNM' in coach.data:
+            last_name_set.add(coach.data['CLNM'])
+    
+    # Convert sets to lists so we can randomly choose from them
+    first_names = list(first_name_set)
+    last_names = list(last_name_set)
+    
+    # Randomize each player's name
+    for coach in coaches:
+        # Select random first and last names
+        new_first_name = random.choice(first_names)
+        coach.set_stat('CFNM', new_first_name)
+        new_last_name = random.choice(last_names)
+        coach.set_stat('CLNM', new_last_name)
 
 def rename_coach(coach):
     first_name = input("Enter new first name (case-sensitive): ").strip()
