@@ -11,6 +11,10 @@ MAXSKILLPOINTS = 131000
 MAXCOACHSTAT = 5
 MAXGMSTAT = MAXCOACHSTAT
 MINPLRN = 75
+PLAYER_FIRST_NAME_CODE = 'PFNA'
+PLAYER_LAST_NAME_CODE = 'PLNA'
+COACH_FIRST_NAME_CODE = 'CFNM'
+COACH_LAST_NAME_CODE = 'CLNM'
 TEAM_NAMES = {
     "1": "Bears (Chicago)",
     "2": "Bengals (Cincinnati)",
@@ -97,10 +101,12 @@ PLAYER_STATS = {
 # Global Variables
 skill_members = None
 changes = False
+roster_type = ''
 
 
 # Class definitions
 class Member:
+    global roster_type
     def __init__(self, data):
         self.data = data
 
@@ -109,6 +115,15 @@ class Member:
             self.data[stat_key] = value
         else:
             print(f"Stat {stat_key} does not exist.")
+    
+    def get_name(self):
+        name = ''
+        if roster_type == 'Player':
+            name = self.data[PLAYER_FIRST_NAME_CODE] + ' ' + self.data[PLAYER_LAST_NAME_CODE]
+        if roster_type == 'Coach':
+            name = self.data[COACH_FIRST_NAME_CODE] + ' ' + self.data[COACH_LAST_NAME_CODE]
+        return name
+
 
         
 # IO & UI Functions
@@ -128,9 +143,10 @@ def get_input_file():
                 print("File not found. Please try again.")            
 
 
-def main_menu(roster_type, members, headers, input_csv_path):
+def main_menu(members, headers, input_csv_path):
     member_index = None
     skill_file = None
+    global roster_type
     global skill_members
     global changes
     if (roster_type == "Coach") or (roster_type == "GM"):
@@ -165,7 +181,15 @@ def main_menu(roster_type, members, headers, input_csv_path):
                     else:
                         print(f"{roster_type} not found. Please try again.")
             elif choice == '3':
-                pass
+                print_team_names()
+                team_id = False
+                while True:
+                    team_id = input(f"Enter team to bulk edit {roster_type}s (or 'q' to quit): ").strip()
+                    if team_id.lower() in ['q', 'quit']:
+                        break
+                    elif team_id:
+                        modify_team_roster(team_id, members)
+                        break
             elif choice == '4':
                 if roster_type == 'Player':
                     randomize_player_names(members)
@@ -292,8 +316,8 @@ def find_member_by_team(members, roster_type):
 
 def find_member_index(members, first_name, last_name, roster_type):
     name_keys = {
-        "Player": ("PFNA", "PLNA"),
-        "Coach": ("CFNM", "CLNM"),
+        "Player": ("PLAYER_FIRST_NAME_CODE", "PLAYER_LAST_NAME_CODE"),
+        "Coach": ("COACH_FIRST_NAME_CODE", "COACH_LAST_NAME_CODE"),
         "GM": None,  # GMs do not have editable names
         "Trainer": None  # Trainers do not have editable names
     }
@@ -331,9 +355,10 @@ def list_roster_by_team(roster_type, members):
     # GMs and Trainers do not use this step
 
 
-def modify_member(actions, member, roster_type):
+def modify_member(actions, member):
     global skill_members
     global changes
+    global roster_type
     member_type = roster_type.lower()
     if member_type == "gm":
         member_type = "GM"
@@ -354,6 +379,29 @@ def modify_member(actions, member, roster_type):
         else:
             print("Invalid choice. Please try again.")
 
+def modify_bulk_members(actions, team_id, members):
+    global skill_members
+    global changes
+    global roster_type
+    while True:
+        print("Choose an action to perform:")
+        for key, (description, _) in actions.items():
+            print(f"{key}. {description}")
+        print(f"q. Quit to {roster_type} selection")
+
+        choice = input("Enter the number of your choice: ").strip().lower()
+        if choice in actions:
+            _, action = actions[choice]
+            for member in members:
+                if member.data['TGID'] == team_id:
+                    action(member)
+                    changes = True
+                    print(f"Action '{actions[choice][0]}' performed on {roster_type} {member.get_name()}.")
+        elif choice in ['q', 'quit']:
+            break
+        else:
+            print("Invalid choice. Please try again.")
+
 
 def modify_roster_member(roster_type, member):
     if roster_type == 'Player':
@@ -361,6 +409,16 @@ def modify_roster_member(roster_type, member):
     elif roster_type == 'Coach':
         modify_coach(member)
     # GMs and Trainers do not use this step
+
+
+def modify_team_roster(team_id, members):
+    global roster_type
+    if roster_type == 'Player':
+        modify_all_players_on_team(team_id, members)
+    elif roster_type == 'Coach':
+        modify_all_coaches_on_team(team_id, members)
+    else:
+        print("error: no player or coach DBs detected, how did you get here?")
 
 
 def read_the_manual(member):
@@ -443,8 +501,8 @@ def list_players_by_team(players):
         for i, player in enumerate(team_players):
             pos_num = player.data['PPOS']
             position = position_abbr.get(pos_num, "Unknown")
-            first_name = player.data['PFNA']
-            last_name = player.data['PLNA']
+            first_name = player.data[PLAYER_FIRST_NAME_CODE]
+            last_name = player.data[PLAYER_LAST_NAME_CODE]
             display_str = f"{position} {first_name} {last_name}"
             if len(line) + len(display_str) > 80:
                 print(line)
@@ -493,6 +551,17 @@ def make_physical_specimen(player):
     player.set_stat('PWGT', new_weight)
 
 
+def modify_all_players_on_team(team_id, players):
+    actions = {
+        "1": ("Maximize Potential", max_potential),
+        "2": ("Maximize Health", max_health),
+        "3": ("Resign for Peanuts (7yr contract at league minimum salary)", resign_for_peanuts),
+        "4": ("Make Physical Specimen (increase physical size & max potentials)", make_physical_specimen),
+        "5": ("Take 'roids (inflate current stats)", inflate_current_stats),
+        "6": ("Change Key Value", change_key_value),
+    }
+    modify_bulk_members(actions, team_id, players)
+
 def modify_player(player):
     actions = {
         "1": ("Maximize Potential", max_potential),
@@ -503,8 +572,7 @@ def modify_player(player):
         "6": ("Rename Player", rename_player),
         "7": ("Change Key Value", change_key_value),
     }
-
-    modify_member(actions, player, "Player")
+    modify_member(actions, player)
 
 
 def randomize_player_names(players):
@@ -515,10 +583,10 @@ def randomize_player_names(players):
     last_name_set = set()
     
     for player in players:
-        if 'PFNA' in player.data:
-            first_name_set.add(player.data['PFNA'])
-        if 'PLNA' in player.data:
-            last_name_set.add(player.data['PLNA'])
+        if PLAYER_FIRST_NAME_CODE in player.data:
+            first_name_set.add(player.data[PLAYER_FIRST_NAME_CODE])
+        if PLAYER_LAST_NAME_CODE in player.data:
+            last_name_set.add(player.data[PLAYER_LAST_NAME_CODE])
     
     # Convert sets to lists so we can randomly choose from them
     first_names = list(first_name_set)
@@ -528,16 +596,16 @@ def randomize_player_names(players):
     for player in players:
         # Select random first and last names
         new_first_name = random.choice(first_names)
-        player.set_stat('PFNA', new_first_name)
+        player.set_stat(PLAYER_FIRST_NAME_CODE, new_first_name)
         new_last_name = random.choice(last_names)
-        player.set_stat('PLNA', new_last_name)
+        player.set_stat(PLAYER_LAST_NAME_CODE, new_last_name)
 
 
 def rename_player(player):
     first_name = input("Enter new first name (case-sensitive): ").strip()
     last_name = input("Enter new last name (case-sensitive): ").strip()
-    player.set_stat('PFNA', first_name)
-    player.set_stat('PLNA', last_name)
+    player.set_stat(PLAYER_FIRST_NAME_CODE, first_name)
+    player.set_stat(PLAYER_LAST_NAME_CODE, last_name)
 
 
 def resign_for_peanuts(player):
@@ -605,8 +673,8 @@ def list_coaches_by_team(coaches):
         for i, coach in enumerate(team_coaches):
             pos_num = coach.data['COPS']
             position = position_abbr.get(pos_num, "Unknown")
-            first_name = coach.data['CFNM']
-            last_name = coach.data['CLNM']
+            first_name = coach.data[COACH_FIRST_NAME_CODE]
+            last_name = coach.data[COACH_LAST_NAME_CODE]
             display_str = f"{position} {first_name} {last_name}"
             if len(line) + len(display_str) > 80:
                 print(line)
@@ -636,6 +704,18 @@ def max_positional_coaching_potential(coach):
     pass
 
 
+def modify_all_coaches_on_team(team_id, coaches):
+    actions = {
+        "1": ("Max General Coaching Potential", max_general_coaching_potential),
+        "2": ("Max Positional Coaching Potential", max_positional_coaching_potential),
+        "3": ("Read the Manual (Max Skill Points)", read_the_manual),
+        "4": ("Take old boy out for drinks (Captain personality)", captain_personality),
+        "5": ("Change Key Value", change_key_value),
+    }
+
+    modify_bulk_members(actions, team_id, coaches)
+
+
 def modify_coach(coach):
     actions = {
         "1": ("Max General Coaching Potential", max_general_coaching_potential),
@@ -657,10 +737,10 @@ def randomize_coach_names(coaches):
     last_name_set = set()
     
     for coach in coaches:
-        if 'CFNM' in coach.data:
-            first_name_set.add(coach.data['CFNM'])
-        if 'CLNM' in coach.data:
-            last_name_set.add(coach.data['CLNM'])
+        if COACH_FIRST_NAME_CODE in coach.data:
+            first_name_set.add(coach.data[COACH_FIRST_NAME_CODE])
+        if COACH_LAST_NAME_CODE in coach.data:
+            last_name_set.add(coach.data[COACH_LAST_NAME_CODE])
     
     # Convert sets to lists so we can randomly choose from them
     first_names = list(first_name_set)
@@ -670,15 +750,16 @@ def randomize_coach_names(coaches):
     for coach in coaches:
         # Select random first and last names
         new_first_name = random.choice(first_names)
-        coach.set_stat('CFNM', new_first_name)
+        coach.set_stat(COACH_FIRST_NAME_CODE, new_first_name)
         new_last_name = random.choice(last_names)
-        coach.set_stat('CLNM', new_last_name)
+        coach.set_stat(COACH_LAST_NAME_CODE, new_last_name)
+
 
 def rename_coach(coach):
     first_name = input("Enter new first name (case-sensitive): ").strip()
     last_name = input("Enter new last name (case-sensitive): ").strip()
-    coach.data['CFNM'] = first_name
-    coach.data['CLNM'] = last_name
+    coach.data[COACH_FIRST_NAME_CODE] = first_name
+    coach.data[COACH_LAST_NAME_CODE] = last_name
 
 
 # GM specific functions
@@ -738,13 +819,14 @@ def rename_trainer(trainer):
 
 # main()
 def main():
+    global roster_type
     input_csv_path = get_input_file()
 
     headers, members = read_members_from_csv(input_csv_path)
     roster_type = detect_roster_type(headers)
     print(f"Detected roster type: {roster_type}")
 
-    main_menu(roster_type, members, headers, input_csv_path)
+    main_menu(members, headers, input_csv_path)
 
 if __name__ == "__main__":
     main()
