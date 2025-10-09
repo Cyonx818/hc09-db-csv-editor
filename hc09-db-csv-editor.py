@@ -316,8 +316,8 @@ def find_member_by_team(members, roster_type):
 
 def find_member_index(members, first_name, last_name, roster_type):
     name_keys = {
-        "Player": ("PLAYER_FIRST_NAME_CODE", "PLAYER_LAST_NAME_CODE"),
-        "Coach": ("COACH_FIRST_NAME_CODE", "COACH_LAST_NAME_CODE"),
+        "Player": (PLAYER_FIRST_NAME_CODE, PLAYER_LAST_NAME_CODE),
+        "Coach": (COACH_FIRST_NAME_CODE, COACH_LAST_NAME_CODE),
         "GM": None,  # GMs do not have editable names
         "Trainer": None  # Trainers do not have editable names
     }
@@ -726,7 +726,7 @@ def modify_coach(coach):
         "6": ("Change Key Value", change_key_value),
     }
 
-    modify_member(actions, coach, "Coach")
+    modify_member(actions, coach)
 
 
 def randomize_coach_names(coaches):
@@ -790,7 +790,7 @@ def modify_gm(gm):
         "4": ("Take old boy out for drinks (Captain personality)", captain_personality),
         "5": ("Change Key Value", change_key_value),
     }
-    modify_member(actions, gm, 'GM')
+    modify_member(actions, gm)
 
 def rename_gm(gm):
     pass # requires PERV file to be dumped in order to implement.
@@ -810,7 +810,7 @@ def modify_trainer(trainer):
         "3": ("Take old boy out for drinks (Captain personality)", captain_personality),
         "4": ("Change Key Value", change_key_value),
     }
-    modify_member(actions, trainer, 'Trainer')
+    modify_member(actions, trainer)
 
 
 def rename_trainer(trainer):
