@@ -10,5 +10,7 @@ __version__ = "1.0.0"
 __author__ = "Cyonx818"
 __license__ = "MIT"
 
-# Package metadata
-__all__ = []
+# Public API exports
+from .cli import Application, main
+
+__all__ = ['Application', 'main', '__version__']
